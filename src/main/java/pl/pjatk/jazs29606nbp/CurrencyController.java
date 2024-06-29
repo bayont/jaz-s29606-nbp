@@ -39,7 +39,7 @@ public class CurrencyController {
                     content = { @Content(mediaType = "application/json", schema = @Schema(implementation = AverageRateResponse.class)) }),
             @ApiResponse(responseCode = "400", description = "Invalid currency code or invalid date range",
                     content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))}),
-            @ApiResponse(responseCode = "404", description = "Currency not found",
+            @ApiResponse(responseCode = "404", description = "Currency not found or no recorded rates within the date range",
                     content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))}),
             @ApiResponse(responseCode = "500", description = "Unhandled exception",
                     content = {@Content(mediaType = "application/json",schema = @Schema(implementation = ErrorResponse.class))}),
@@ -52,7 +52,7 @@ public class CurrencyController {
 
     @ExceptionHandler(NotFoundException.class)
     public ResponseEntity<ErrorResponse> handleNotFoundException(NotFoundException e) {
-        return new ResponseEntity<>(new ErrorResponse("Currency not found."), HttpStatus.NOT_FOUND);
+        return new ResponseEntity<>(new ErrorResponse("Currency not found or no recorded rates within the date range."), HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler(BadRequestException.class)
