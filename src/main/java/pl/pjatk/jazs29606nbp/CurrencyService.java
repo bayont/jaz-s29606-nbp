@@ -4,34 +4,21 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
+import pl.pjatk.jazs29606nbp.exceptions.BadRequestException;
+import pl.pjatk.jazs29606nbp.exceptions.CurrencyServiceException;
+import pl.pjatk.jazs29606nbp.exceptions.NotFoundException;
+import pl.pjatk.jazs29606nbp.model.AverageRateResponse;
 import pl.pjatk.jazs29606nbp.model.Result;
 import pl.pjatk.jazs29606nbp.model.dto.CurrencyDTO;
 import pl.pjatk.jazs29606nbp.model.dto.RateDTO;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
-
-class CurrencyServiceException extends Exception {
-    public CurrencyServiceException(String message) {
-        super(message);
-    }
-}
-
-class NotFoundException extends CurrencyServiceException {
-    public NotFoundException(String message) {
-        super(message);
-    }
-}
-
-class BadRequestException extends CurrencyServiceException {
-    public BadRequestException(String message) {
-        super(message);
-    }
-}
 
 @Service
 public class CurrencyService {
@@ -42,23 +29,22 @@ public class CurrencyService {
         this.currencyResultRepository = currencyResultRepository;
     }
 
-    public Double getAverageRate(String currencyCode, LocalDate startDate, LocalDate endDate) throws CurrencyServiceException {
+    public AverageRateResponse getAverageRate(String currencyCode, LocalDate startDate, LocalDate endDate) throws CurrencyServiceException {
         CurrencyDTO currencyDTO;
         try {
-
-            currencyDTO = getCurrency(currencyCode, "d", "x");
+            currencyDTO = getCurrency(currencyCode, this.formatDate(startDate), this.formatDate(endDate));
         } catch (HttpStatusCodeException e) {
             HttpStatusCode statusCode = e.getStatusCode();
             if (statusCode.equals(NOT_FOUND)) {
-                throw new NotFoundException("Currency not found");
+                throw new NotFoundException();
             } else if (statusCode.equals(BAD_REQUEST)) {
-                throw new BadRequestException("Bad request");
+                throw new BadRequestException();
             }
-            throw new CurrencyServiceException("Unknown error");
+            throw new CurrencyServiceException();
         }
         double averageRate = calculateAverageRate(currencyDTO);
         saveResultToDatabase(currencyDTO.getCurrency(), currencyCode, startDate, endDate, averageRate, LocalDateTime.now());
-        return averageRate;
+        return new AverageRateResponse(averageRate);
     }
 
     private double calculateAverageRate(CurrencyDTO currencyDTO) {
@@ -75,6 +61,10 @@ public class CurrencyService {
         HttpEntity<String> entity = new HttpEntity<>(null, headers);
 
         return restTemplate.exchange("http://api.nbp.pl/api/exchangerates/rates/a/" + currencyCode + "/" + startDate + "/" + endDate, HttpMethod.GET, entity, CurrencyDTO.class).getBody();
+    }
+
+    private String formatDate(LocalDate date) {
+        return date.format(DateTimeFormatter.ISO_DATE); // YYYY-MM-DD
     }
 
 }
