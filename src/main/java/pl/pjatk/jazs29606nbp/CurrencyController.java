@@ -6,8 +6,10 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.core.env.MissingRequiredPropertiesException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.*;
 import pl.pjatk.jazs29606nbp.exceptions.BadRequestException;
 import pl.pjatk.jazs29606nbp.exceptions.CurrencyServiceException;
@@ -17,6 +19,7 @@ import pl.pjatk.jazs29606nbp.model.AverageRateResponse;
 import pl.pjatk.jazs29606nbp.model.ErrorResponse;
 
 import java.time.LocalDate;
+import java.util.NoSuchElementException;
 
 @RestController
 @RestControllerAdvice
@@ -68,6 +71,11 @@ public class CurrencyController {
     @ExceptionHandler(CurrencyServiceException.class)
     public ResponseEntity<ErrorResponse> handleCurrencyServiceException(CurrencyServiceException e) {
         return new ResponseEntity<>(new ErrorResponse("Unhandled exception."),HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ErrorResponse> handleMissingServletRequestParameterException(MissingServletRequestParameterException e) {
+        return new ResponseEntity<>(new ErrorResponse("Missing one of the required query parameter: '" + e.getParameterName() + "'"), HttpStatus.BAD_REQUEST);
     }
 
 }
