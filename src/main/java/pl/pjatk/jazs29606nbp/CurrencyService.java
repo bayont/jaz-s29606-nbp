@@ -6,6 +6,7 @@ import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 import pl.pjatk.jazs29606nbp.exceptions.BadRequestException;
 import pl.pjatk.jazs29606nbp.exceptions.CurrencyServiceException;
+import pl.pjatk.jazs29606nbp.exceptions.ExternalServiceUnhandledException;
 import pl.pjatk.jazs29606nbp.exceptions.NotFoundException;
 import pl.pjatk.jazs29606nbp.model.AverageRateResponse;
 import pl.pjatk.jazs29606nbp.model.Result;
@@ -17,8 +18,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
-import static org.springframework.http.HttpStatus.BAD_REQUEST;
-import static org.springframework.http.HttpStatus.NOT_FOUND;
+import org.springframework.http.HttpStatus;
+
 
 @Service
 public class CurrencyService {
@@ -35,10 +36,12 @@ public class CurrencyService {
             currencyDTO = getCurrency(currencyCode, this.formatDate(startDate), this.formatDate(endDate));
         } catch (HttpStatusCodeException e) {
             HttpStatusCode statusCode = e.getStatusCode();
-            if (statusCode.equals(NOT_FOUND)) {
+            if (statusCode.equals(HttpStatus.NOT_FOUND)) {
                 throw new NotFoundException();
-            } else if (statusCode.equals(BAD_REQUEST)) {
+            } else if (statusCode.equals(HttpStatus.BAD_REQUEST)) {
                 throw new BadRequestException();
+            } else if (statusCode.equals(HttpStatus.INTERNAL_SERVER_ERROR)) {
+                throw new ExternalServiceUnhandledException();
             }
             throw new CurrencyServiceException();
         }

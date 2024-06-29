@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import pl.pjatk.jazs29606nbp.exceptions.BadRequestException;
 import pl.pjatk.jazs29606nbp.exceptions.CurrencyServiceException;
+import pl.pjatk.jazs29606nbp.exceptions.ExternalServiceUnhandledException;
 import pl.pjatk.jazs29606nbp.exceptions.NotFoundException;
 import pl.pjatk.jazs29606nbp.model.AverageRateResponse;
 import pl.pjatk.jazs29606nbp.model.ErrorResponse;
@@ -40,6 +41,10 @@ public class CurrencyController {
                     content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))}),
             @ApiResponse(responseCode = "404", description = "Currency not found",
                     content = {@Content(mediaType = "application/json", schema = @Schema(implementation = ErrorResponse.class))}),
+            @ApiResponse(responseCode = "500", description = "Unhandled exception",
+                    content = {@Content(mediaType = "application/json",schema = @Schema(implementation = ErrorResponse.class))}),
+            @ApiResponse(responseCode = "502", description = "Unhandled exception from external dependency",
+                    content = {@Content(mediaType = "application/json",schema = @Schema(implementation = ErrorResponse.class))})
     })
     public ResponseEntity<AverageRateResponse> getCurrency(@PathVariable String currencyCode, @RequestParam() LocalDate startDate, @RequestParam() LocalDate endDate) throws CurrencyServiceException {
         return new ResponseEntity<>(currencyService.getAverageRate(currencyCode, startDate, endDate), HttpStatus.OK);
@@ -53,6 +58,11 @@ public class CurrencyController {
     @ExceptionHandler(BadRequestException.class)
     public ResponseEntity<ErrorResponse> handleBadRequestException(BadRequestException e) {
         return new ResponseEntity<>(new ErrorResponse("Bad parameters sent, check your dates."), HttpStatus.BAD_REQUEST);
+    }
+
+    @ExceptionHandler(ExternalServiceUnhandledException.class)
+    public ResponseEntity<ErrorResponse> handleExternalServiceUnhandledException(ExternalServiceUnhandledException e) {
+        return new ResponseEntity<>(new ErrorResponse("Unhandled exception from external dependency."),HttpStatus.BAD_GATEWAY);
     }
 
     @ExceptionHandler(CurrencyServiceException.class)
